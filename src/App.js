@@ -35,7 +35,7 @@ function LevelSelection({ onLevelSelect }) {
 }
 
 // 카드 컴포넌트 - 드래그 기능 추가
-function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick }) {
+function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging }) {
   const handleDragStart = (e) => {
     if (isDraggable) {
       onDragStart(pileIndex, cardIndex);
@@ -61,15 +61,18 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
 
   return (
     <div 
-      className={`card ${card.isVisible ? 'visible' : 'hidden'} ${isDraggable ? 'draggable' : ''} ${getCardColor()}`}
+      className={`card ${card.isVisible ? 'visible' : 'hidden'} ${isDraggable ? 'draggable' : ''} ${getCardColor()} ${isDragging ? 'dragging-preview' : ''}`}
       draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onClick={handleClick}
+      data-rank={card.rank}
+      data-suit={card.suit}
       style={{
         position: 'absolute',
-        top: `${cardIndex * 20}px`,
-        zIndex: cardIndex
+        top: `${cardIndex * 15}px`,
+        zIndex: isDragging ? cardIndex + 1000 : cardIndex, // 드래그 중인 카드들의 z-index를 높임
+        left: '10px'
       }}
     >
       {card.isVisible ? `${card.rank}${card.suit}` : '🂠'}
@@ -78,7 +81,7 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
 }
 
 // 카드 더미 컴포넌트
-function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick }) {
+function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick, draggingCards }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e) => {
@@ -124,6 +127,14 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
 
   const draggableIndices = getDraggableCards();
 
+  // 드래그 중인 카드인지 확인하는 함수
+  const isDraggingCard = (cardIndex) => {
+    if (!draggingCards || draggingCards.pileIndex !== pileIndex) {
+      return false;
+    }
+    return cardIndex >= draggingCards.startIndex;
+  };
+
   return (
     <div 
       className={`card-pile ${isDragOver ? 'drag-over' : ''}`}
@@ -145,6 +156,7 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
           onDragEnd={onDragEnd}
           onCardClick={onCardClick}
           isDraggable={draggableIndices.includes(index)}
+          isDragging={isDraggingCard(index)}
         />
       ))}
     </div>
@@ -167,8 +179,13 @@ function App() {
   const [dragInfo, setDragInfo] = useState(null);
   const [completedSets, setCompletedSets] = useState(0);
   const [gameWon, setGameWon] = useState(false);
-  const [gameLevel, setGameLevel] = useState(null); // 새로 추가: 게임 레벨 상태
-  const [gameStarted, setGameStarted] = useState(false); // 새로 추가: 게임 시작 여부
+  const [gameLevel, setGameLevel] = useState(null);
+  const [gameStarted, setGameStarted] = useState(false);
+  // 초기 게임 상태를 저장하기 위한 상태 추가
+  const [initialGameBoard, setInitialGameBoard] = useState([]);
+  const [initialDealPile, setInitialDealPile] = useState([]);
+  // 드래그 중인 카드들을 표시하기 위한 상태 추가
+  const [draggingCards, setDraggingCards] = useState(null);
 
   // 게임 초기화를 게임 시작될 때만 실행하도록 수정
   useEffect(() => {
@@ -263,8 +280,16 @@ function App() {
     // 남은 카드들은 딜 더미에 (50장)
     const remainingCards = deck.slice(cardIndex);
 
+    // 초기 상태를 깊은 복사로 저장
+    const deepCopyBoard = piles.map(pile =>
+      pile.map(card => ({ ...card }))
+    );
+    const deepCopyDeal = remainingCards.map(card => ({ ...card }));
+
     setGameBoard(piles);
     setDealPile(remainingCards);
+    setInitialGameBoard(deepCopyBoard); // 초기 게임 보드 저장
+    setInitialDealPile(deepCopyDeal); // 초기 딜 더미 저장
     setScore(500);
     setCompletedSets(0);
     setGameWon(false);
@@ -282,10 +307,18 @@ function App() {
   // 드래그 시작
   const handleDragStart = (pileIndex, cardIndex) => {
     const draggedCards = gameBoard[pileIndex].slice(cardIndex);
-    setDragInfo({
+    const dragInfo = {
       sourcePile: pileIndex,
       startIndex: cardIndex,
       cards: draggedCards
+    };
+
+    setDragInfo(dragInfo);
+
+    // 드래그 중인 카드들의 정보를 저장
+    setDraggingCards({
+      pileIndex: pileIndex,
+      startIndex: cardIndex
     });
   };
 
@@ -295,6 +328,8 @@ function App() {
       if (dragInfo) {
         setDragInfo(null);
       }
+      // 드래그 시각 효과 제거
+      setDraggingCards(null);
     }, 100);
   };
 
@@ -451,6 +486,22 @@ function App() {
     setDragInfo(null);
   };
 
+  // 현재 레벨로 게임 재시작 (초기 상태로 복원하도록 수정)
+  const restartCurrentLevel = () => {
+    // 초기 상태를 깊은 복사로 복원
+    const restoredBoard = initialGameBoard.map(pile =>
+      pile.map(card => ({ ...card }))
+    );
+    const restoredDeal = initialDealPile.map(card => ({ ...card }));
+
+    setGameBoard(restoredBoard);
+    setDealPile(restoredDeal);
+    setScore(500);
+    setCompletedSets(0);
+    setGameWon(false);
+    setDragInfo(null);
+  };
+
   // 레벨 이름 표시 함수
   const getLevelName = () => {
     switch(gameLevel) {
@@ -501,6 +552,9 @@ function App() {
             새 카드 배치 ({Math.ceil(dealPile.length / 8)}회 남음)
           </button>
           <button onClick={restartGame} className="level-back-btn">레벨 선택으로</button>
+          <button onClick={restartCurrentLevel} className="restart-level-btn">
+            현재 레벨 재시작
+          </button>
         </div>
       </header>
 
@@ -522,6 +576,7 @@ function App() {
             onDragEnd={handleDragEnd}
             onDrop={handleDrop}
             onCardClick={handleCardClick}
+            draggingCards={draggingCards} // 드래그 중인 카드 정보 전달
           />
         ))}
       </div>
