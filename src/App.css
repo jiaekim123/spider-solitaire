@@ -350,6 +350,17 @@
   color: white !important;
 }
 
+.undo-btn {
+  background: linear-gradient(135deg, #e67e22, #d35400) !important;
+  color: white !important;
+}
+
+.undo-btn:disabled {
+  background: #666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .game-board {

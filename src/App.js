@@ -269,6 +269,57 @@ function App() {
   const [initialDealPile, setInitialDealPile] = useState([]);
   // 드래그 중인 카드들을 표시하기 위한 상태 추가
   const [draggingCards, setDraggingCards] = useState(null);
+  // 실행취소를 위한 히스토리 상태 추가
+  const [gameHistory, setGameHistory] = useState([]);
+  const [canUndo, setCanUndo] = useState(false);
+
+  // 게임 상태를 히스토리에 저장하는 함수
+  const saveGameState = () => {
+    const currentState = {
+      gameBoard: gameBoard.map(pile => pile.map(card => ({ ...card }))),
+      dealPile: dealPile.map(card => ({ ...card })),
+      score: score,
+      completedSets: completedSets,
+      gameWon: gameWon
+    };
+
+    setGameHistory(prev => {
+      const newHistory = [...prev, currentState];
+      // 최대 20개의 히스토리만 유지 (메모리 효율성을 위해)
+      if (newHistory.length > 20) {
+        newHistory.shift();
+      }
+      return newHistory;
+    });
+    setCanUndo(true);
+  };
+
+  // 실행취소 함수
+  const undoLastMove = () => {
+    if (gameHistory.length === 0) return;
+
+    const lastState = gameHistory[gameHistory.length - 1];
+
+    // 이전 상태로 복원
+    setGameBoard(lastState.gameBoard.map(pile => pile.map(card => ({ ...card }))));
+    setDealPile(lastState.dealPile.map(card => ({ ...card })));
+    setScore(lastState.score);
+    setCompletedSets(lastState.completedSets);
+    setGameWon(lastState.gameWon);
+
+    // 히스토리에서 마지막 상태 제거
+    setGameHistory(prev => {
+      const newHistory = prev.slice(0, -1);
+      setCanUndo(newHistory.length > 0);
+      return newHistory;
+    });
+  };
+
+  // 히스토리 초기화 함수
+  const clearHistory = () => {
+    setGameHistory([]);
+    setCanUndo(false);
+  };
 
   // 게임 초기화를 게임 시작될 때만 실행하도록 수정
   useEffect(() => {
@@ -429,6 +480,9 @@ function App() {
 
     // 이동 가능한지 확인
     if (canDropCards(dragInfo.cards, targetPile)) {
+      // 카드 이동 전에 현재 상태를 히스토리에 저장
+      saveGameState();
+
       // 카드 이동
       sourcePile.splice(dragInfo.startIndex);
       targetPile.push(...dragInfo.cards);
@@ -523,6 +577,9 @@ function App() {
     const card = newGameBoard[pileIndex][cardIndex];
 
     if (!card.isVisible && cardIndex === newGameBoard[pileIndex].length - 1) {
+      // 카드를 뒤집기 전에 현재 상태를 히스토리에 저장
+      saveGameState();
+
       card.isVisible = true;
       setGameBoard(newGameBoard);
     }
@@ -538,6 +595,9 @@ function App() {
       alert('빈 더미가 있을 때는 새 카드를 배치할 수 없습니다!');
       return;
     }
+
+    // 새 카드 배치 전에 현재 상태를 히스토리에 저장
+    saveGameState();
 
     const newGameBoard = [...gameBoard];
     const newDealPile = [...dealPile];
@@ -567,6 +627,7 @@ function App() {
     setCompletedSets(0);
     setGameWon(false);
     setDragInfo(null);
+    clearHistory(); // 히스토리 초기화
   };
 
   // 현재 레벨로 게임 재시작 (초기 상태로 복원하도록 수정)
@@ -583,6 +644,7 @@ function App() {
     setCompletedSets(0);
     setGameWon(false);
     setDragInfo(null);
+    clearHistory(); // 히스토리 초기화
   };
 
   // 레벨 이름 표시 함수
@@ -636,7 +698,10 @@ function App() {
           </button>
           <button onClick={restartGame} className="level-back-btn">레벨 선택으로</button>
           <button onClick={restartCurrentLevel} className="restart-level-btn">
-            현재 레벨 재시작
+            재시작
+          </button>
+          <button onClick={undoLastMove} className="undo-btn" disabled={!canUndo}>
+            실행취소
           </button>
         </div>
       </header>
