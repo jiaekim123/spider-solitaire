@@ -1,70 +1,161 @@
-# Getting Started with Create React App
+# 🕷️ 스파이더 솔리테어 (Spider Solitaire)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+React로 개발된 클래식 스파이더 솔리테어 카드 게임입니다.
 
-## Available Scripts
+## 🎮 게임 소개
 
-In the project directory, you can run:
+스파이더 솔리테어는 8개의 카드 더미에서 같은 무늬의 카드를 K부터 A까지 순서대로 배치하여 완성된 세트를 제거하는 카드 게임입니다. 8개의 세트를 모두 완성하면 승리합니다!
 
-### `npm start`
+## ✨ 주요 기능
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 🎯 세 가지 난이도
+- **초급 (Beginner)**: 1가지 무늬 (♠️만)
+- **중급 (Intermediate)**: 2가지 무늬 (♠️♥️)
+- **고급 (Advanced)**: 4가지 무늬 (♠️♥️♦️♣️)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 🎲 게임 기능
+- **드래그 앤 드롭**: 마우스로 카드를 끌어서 이동
+- **자동 세트 제거**: K-A 완성 시 자동으로 카드 제거
+- **점수 시스템**: 이동 시 -1점, 새 카드 배치 시 -5점, 세트 완성 시 +100점
+- **실행취소**: 이전 동작 되돌리기 (최대 20단계)
+- **카드 뒤집기**: 숨겨진 카드 클릭으로 공개
 
-### `npm test`
+### 🎨 시각적 효과
+- **드래그 프리뷰**: 여러 카드 동시 이동 시 시각적 피드백
+- **색상 구분**: 빨간색(♥️♦️), 검은색(♠️♣️) 카드 구분
+- **상태 표시**: 이동 가능한 카드와 불가능한 카드 시각적 구분
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## 🎯 게임 규칙
 
-### `npm run build`
+1. **카드 배치**: 내림차순으로만 카드를 놓을 수 있습니다 (예: 7 위에 6)
+2. **카드 이동**: 같은 무늬의 연속된 카드들만 함께 이동 가능
+3. **빈 더미**: 어떤 카드든 놓을 수 있습니다
+4. **세트 완성**: 같은 무늬 K-A 순서 완성 시 자동 제거
+5. **새 카드**: 빈 더미가 없을 때만 새 카드 배치 가능
+6. **승리 조건**: 8개 세트 모두 완성
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## 🚀 시작하기
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 필요 조건
+- Node.js (14.0.0 이상)
+- npm 또는 yarn
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 설치 및 실행
 
-### `npm run eject`
+1. **저장소 클론**
+```bash
+git clone <repository-url>
+cd spider-solitaire
+```
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+2. **의존성 설치**
+```bash
+npm install
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+3. **개발 서버 실행**
+```bash
+npm start
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+4. **브라우저에서 게임 실행**
+- 자동으로 `http://localhost:3000`에서 실행됩니다
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### 빌드
 
-## Learn More
+```bash
+# 프로덕션 빌드
+npm run build
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+# 테스트 실행
+npm test
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 🎮 게임 조작법
 
-### Code Splitting
+### 마우스 조작
+- **카드 이동**: 카드를 클릭하고 드래그하여 다른 더미로 이동
+- **카드 뒤집기**: 뒤집힌 카드를 클릭하여 앞면으로 뒤집기
+- **새 카드 배치**: "새 카드 배치" 버튼 클릭
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### 게임 컨트롤
+- **실행취소**: 이전 동작 되돌리기
+- **재시작**: 현재 레벨 처음부터 다시 시작
+- **레벨 선택으로**: 난이도 선택 화면으로 돌아가기
 
-### Analyzing the Bundle Size
+## 🏆 점수 시스템
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+- **시작 점수**: 500점
+- **카드 이동**: -1점
+- **새 카드 배치**: -5점
+- **세트 완성**: +100점
 
-### Making a Progressive Web App
+## 🛠️ 기술 스택
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **Frontend**: React 19.1.1
+- **Language**: JavaScript (ES6+)
+- **Styling**: CSS3
+- **State Management**: React Hooks (useState, useEffect)
 
-### Advanced Configuration
+## 📁 프로젝트 구조
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+```
+spider-solitaire/
+├── public/
+│   ├── index.html
+│   ├── favicon.ico
+│   └── ...
+├── src/
+│   ├── App.js          # 메인 게임 컴포넌트
+│   ├── App.css         # 게임 스타일
+│   ├── index.js        # React 앱 진입점
+│   └── ...
+├── package.json
+└── README.md
+```
 
-### Deployment
+## 🎨 주요 컴포넌트
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+- **LevelSelection**: 난이도 선택 화면
+- **Card**: 개별 카드 컴포넌트 (드래그 기능 포함)
+- **CardPile**: 카드 더미 컴포넌트 (드롭 영역)
+- **App**: 메인 게임 로직 및 상태 관리
 
-### `npm run build` fails to minify
+## 🔧 개발 참고사항
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+### 게임 상태 관리
+- `gameBoard`: 8개 카드 더미 상태
+- `dealPile`: 배치 대기 중인 카드들
+- `gameHistory`: 실행취소를 위한 게임 히스토리
+- `dragInfo`: 드래그 앤 드롭 상태
+
+### 핵심 함수
+- `createDeckByLevel()`: 난이도별 카드 덱 생성
+- `canDropCards()`: 카드 이동 가능 여부 검사
+- `checkAndRemoveCompletedSets()`: 완성된 세트 확인 및 제거
+- `saveGameState()`: 실행취소를 위한 상태 저장
+
+## 🤝 기여하기
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다.
+
+## 🎯 향후 개선 계획
+
+- [ ] 게임 통계 및 기록 저장
+- [ ] 사운드 이펙트 추가
+- [ ] 애니메이션 효과 개선
+- [ ] 모바일 터치 지원 강화
+- [ ] 다크 테마 지원
+- [ ] 키보드 단축키 지원
+
+---
+
+즐거운 게임 되세요! 🎉
