@@ -19,11 +19,13 @@ React로 개발된 클래식 스파이더 솔리테어 카드 게임입니다.
 - **점수 시스템**: 이동 시 -1점, 새 카드 배치 시 -5점, 세트 완성 시 +100점
 - **실행취소**: 이전 동작 되돌리기 (최대 20단계)
 - **카드 뒤집기**: 숨겨진 카드 클릭으로 공개
+- **스마트 힌트**: AI가 분석한 최적의 이동 제안
 
 ### 🎨 시각적 효과
 - **드래그 프리뷰**: 여러 카드 동시 이동 시 시각적 피드백
 - **색상 구분**: 빨간색(♥️♦️), 검은색(♠️♣️) 카드 구분
 - **상태 표시**: 이동 가능한 카드와 불가능한 카드 시각적 구분
+- **힌트 표시**: 이동할 카드(금색), 목적지(녹색) 강조 및 메시지 안내
 
 ## 🎯 게임 규칙
 
@@ -134,27 +136,6 @@ spider-solitaire/
 - `canDropCards()`: 카드 이동 가능 여부 검사
 - `checkAndRemoveCompletedSets()`: 완성된 세트 확인 및 제거
 - `saveGameState()`: 실행취소를 위한 상태 저장
-
-## 🤝 기여하기
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 배포됩니다.
-
-## 🎯 향후 개선 계획
-
-- [ ] 게임 통계 및 기록 저장
-- [ ] 사운드 이펙트 추가
-- [ ] 애니메이션 효과 개선
-- [ ] 모바일 터치 지원 강화
-- [ ] 다크 테마 지원
-- [ ] 키보드 단축키 지원
 
 ---
 

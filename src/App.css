@@ -390,6 +390,96 @@
   opacity: 0.6 !important;
 }
 
+/* 힌트 기능 관련 스타일 */
+.hint-btn {
+  background: linear-gradient(135deg, #FF9800, #F57C00) !important;
+  color: white !important;
+}
+
+.hint-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #F57C00, #E65100) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.hint-btn:disabled {
+  background: #666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+/* 힌트 소스 카드 (이동할 카드) 스타일 */
+.card.hint-source {
+  animation: hintPulse 1.5s infinite;
+  box-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700, 0 0 40px #FFD700 !important;
+  border: 3px solid #FFD700 !important;
+  z-index: 1001 !important;
+}
+
+/* 힌트 목적지 카드 (놓을 위치) 스타일 */
+.card.hint-target {
+  animation: hintTargetPulse 1.5s infinite;
+  box-shadow: 0 0 20px #00FF00, 0 0 30px #00FF00, 0 0 40px #00FF00 !important;
+  border: 3px solid #00FF00 !important;
+  z-index: 1001 !important;
+}
+
+/* 빈 더미가 힌트 목적지인 경우 */
+.card-pile .empty-pile.hint-target {
+  animation: hintTargetPulse 1.5s infinite;
+  box-shadow: 0 0 20px #00FF00, 0 0 30px #00FF00 !important;
+  border: 3px solid #00FF00 !important;
+  background: rgba(0, 255, 0, 0.1) !important;
+}
+
+/* 힌트 소스 애니메이션 */
+@keyframes hintPulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+/* 힌트 목적지 애니메이션 */
+@keyframes hintTargetPulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+    box-shadow: 0 0 20px #00FF00, 0 0 30px #00FF00;
+  }
+  50% {
+    transform: translateX(-50%) scale(1.03);
+    box-shadow: 0 0 30px #00FF00, 0 0 40px #00FF00, 0 0 50px #00FF00;
+  }
+}
+
+/* 힌트 메시지 스타일 */
+.hint-message {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #FFD700;
+  padding: 20px 30px;
+  border-radius: 10px;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+  z-index: 2000;
+  border: 2px solid #FFD700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+  animation: fadeInOut 3s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
   .game-board {

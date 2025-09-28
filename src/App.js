@@ -35,7 +35,7 @@ function LevelSelection({ onLevelSelect }) {
 }
 
 // 카드 컴포넌트 - 드래그 기능 추가
-function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging, gameBoard, isNonMovable }) {
+function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging, gameBoard, isNonMovable, hintInfo, showingHint }) {
   const handleDragStart = (e) => {
     if (isDraggable) {
       onDragStart(pileIndex, cardIndex);
@@ -141,9 +141,25 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
     }, 0);
   };
 
+  // 힌트 카드인지 확인하는 함수
+  const isHintCard = () => {
+    if (!hintInfo || !showingHint) return false;
+    return hintInfo.from === pileIndex &&
+           hintInfo.cards.some(hintCard =>
+             hintCard.suit === card.suit &&
+             hintCard.rank === card.rank
+           );
+  };
+
+  // 힌트 목적지인지 확인하는 함수
+  const isHintTarget = () => {
+    if (!hintInfo || !showingHint) return false;
+    return hintInfo.to === pileIndex && cardIndex === gameBoard[pileIndex].length - 1;
+  };
+
   return (
     <div 
-      className={`card ${card.isVisible ? 'visible' : 'hidden'} ${isDraggable ? 'draggable' : ''} ${getCardColor()} ${isDragging ? 'dragging-preview' : ''} ${isNonMovable ? 'non-movable' : ''}`}
+      className={`card ${card.isVisible ? 'visible' : 'hidden'} ${isDraggable ? 'draggable' : ''} ${getCardColor()} ${isDragging ? 'dragging-preview' : ''} ${isNonMovable ? 'non-movable' : ''} ${isHintCard() ? 'hint-source' : ''} ${isHintTarget() ? 'hint-target' : ''}`}
       draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -164,7 +180,7 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
 }
 
 // 카드 더미 컴포넌트
-function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick, draggingCards, gameBoard }) {
+function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick, draggingCards, gameBoard, hintInfo, showingHint }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e) => {
@@ -295,6 +311,8 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
           isDragging={isDraggingCard(index)}
           isNonMovable={nonMovableIndices.includes(index)}
           gameBoard={gameBoard}
+          hintInfo={hintInfo}
+          showingHint={showingHint}
         />
       ))}
     </div>
@@ -327,6 +345,9 @@ function App() {
   // 실행취소를 위한 히스토리 상태 추가
   const [gameHistory, setGameHistory] = useState([]);
   const [canUndo, setCanUndo] = useState(false);
+  // 힌트 기능을 위한 상태 추가
+  const [hintInfo, setHintInfo] = useState(null);
+  const [showingHint, setShowingHint] = useState(false);
 
   // 게임 상태를 히스토리에 저장하는 함수
   const saveGameState = () => {
@@ -724,6 +745,244 @@ function App() {
     }
   };
 
+  // 게임 힌트 요청
+  const requestHint = () => {
+    // 이미 힌트를 보고 있는 경우에는 새로 요청하지 않음
+    if (showingHint) return;
+
+    // 가능한 모든 이동 경로 계산
+    const possibleMoves = [];
+
+    for (let sourcePileIndex = 0; sourcePileIndex < gameBoard.length; sourcePileIndex++) {
+      const sourcePile = gameBoard[sourcePileIndex];
+      if (sourcePile.length === 0) continue;
+
+      // 드래그 가능한 카드 그룹들 찾기
+      const draggableGroups = findDraggableGroups(sourcePile);
+
+      for (const group of draggableGroups) {
+        const draggedCards = sourcePile.slice(group.startIndex);
+
+        // 다른 더미로 이동 가능한지 확인
+        for (let targetPileIndex = 0; targetPileIndex < gameBoard.length; targetPileIndex++) {
+          if (sourcePileIndex === targetPileIndex) continue;
+
+          const targetPile = gameBoard[targetPileIndex];
+
+          if (canDropCards(draggedCards, targetPile)) {
+            // 이동의 유용성 점수 계산
+            const moveScore = calculateMoveScore(sourcePileIndex, targetPileIndex, draggedCards, gameBoard);
+
+            possibleMoves.push({
+              from: sourcePileIndex,
+              to: targetPileIndex,
+              cards: draggedCards,
+              startIndex: group.startIndex,
+              score: moveScore,
+              description: getMoveDescription(sourcePileIndex, targetPileIndex, draggedCards, gameBoard)
+            });
+          }
+        }
+      }
+    }
+
+    // 가능한 이동 경로가 없으면 힌트 없음
+    if (possibleMoves.length === 0) {
+      // 뒤집을 수 있는 카드가 있는지 확인
+      const flipHint = findFlipHint();
+      if (flipHint) {
+        showFlipHint(flipHint);
+        return;
+      }
+
+      alert('이동 가능한 카드가 없습니다. 새 카드를 배치하거나 뒤집힌 카드를 확인해보세요!');
+      return;
+    }
+
+    // 점수가 가장 높은 이동을 선택
+    possibleMoves.sort((a, b) => b.score - a.score);
+    const hintMove = possibleMoves[0];
+
+    setHintInfo(hintMove);
+    setShowingHint(true);
+
+    // 힌트 메시지 표시
+    showHintMessage(hintMove.description);
+
+    // 잠시 후 힌트 자동 제거
+    setTimeout(() => {
+      setHintInfo(null);
+      setShowingHint(false);
+    }, 5000);
+  };
+
+  // 드래그 가능한 카드 그룹들을 찾는 함수
+  const findDraggableGroups = (pile) => {
+    const groups = [];
+
+    for (let i = pile.length - 1; i >= 0; i--) {
+      if (!pile[i].isVisible) break;
+
+      // 현재 위치부터 시작하는 연속된 같은 무늬 내림차순 그룹 찾기
+      let startIndex = i;
+      for (let j = i - 1; j >= 0; j--) {
+        if (!pile[j].isVisible) break;
+
+        const currentRank = getRankValue(pile[j + 1].rank);
+        const prevRank = getRankValue(pile[j].rank);
+        const currentSuit = pile[j + 1].suit;
+        const prevSuit = pile[j].suit;
+
+        if (currentRank === prevRank - 1 && currentSuit === prevSuit) {
+          startIndex = j;
+        } else {
+          break;
+        }
+      }
+
+      groups.push({ startIndex, length: i - startIndex + 1 });
+      i = startIndex; // 다음 그룹 탐색을 위해 인덱스 조정
+    }
+
+    return groups;
+  };
+
+  // 이동의 유용성 점수를 계산하는 함수
+  const calculateMoveScore = (fromPile, toPile, cards, board) => {
+    let score = 0;
+
+    // 1. 새 카드를 뒤집을 수 있으면 높은 점수
+    if (board[fromPile].length > cards.length &&
+        !board[fromPile][board[fromPile].length - cards.length - 1].isVisible) {
+      score += 50;
+    }
+
+    // 2. 빈 더미로 이동하는 경우
+    if (board[toPile].length === 0) {
+      // King을 빈 더미로 이동하는 것은 좋음
+      if (cards[0].rank === 'K') {
+        score += 30;
+      } else {
+        score += 10; // 다른 카드는 낮은 점수
+      }
+    }
+
+    // 3. 더 긴 연속된 카드 만들기
+    const sequenceLength = getSequenceLength(cards);
+    score += sequenceLength * 5;
+
+    // 4. 완성된 세트에 가까워지는 정도
+    if (cards[0].rank === 'K' && sequenceLength > 1) {
+      score += sequenceLength * 10; // King으로 시작하는 긴 시퀀스는 높은 점수
+    }
+
+    // 5. 같은 더미 내에서 더 나은 정렬 만들기
+    if (board[toPile].length > 0) {
+      const topCard = board[toPile][board[toPile].length - 1];
+      if (topCard.suit === cards[0].suit) {
+        score += 20; // 같은 무늬로 연결되면 높은 점수
+      }
+    }
+
+    return score;
+  };
+
+  // 카드 시퀀스 길이를 계산하는 함수
+  const getSequenceLength = (cards) => {
+    let length = 1;
+    for (let i = 1; i < cards.length; i++) {
+      const currentRank = getRankValue(cards[i].rank);
+      const prevRank = getRankValue(cards[i - 1].rank);
+
+      if (currentRank === prevRank - 1 && cards[i].suit === cards[i - 1].suit) {
+        length++;
+      } else {
+        break;
+      }
+    }
+    return length;
+  };
+
+  // 이동 설명을 생성하는 함수
+  const getMoveDescription = (fromPile, toPile, cards, board) => {
+    const fromPileName = `더미 ${fromPile + 1}`;
+    const toPileName = `더미 ${toPile + 1}`;
+    const cardDesc = `${cards[0].rank}${cards[0].suit}`;
+
+    if (board[toPile].length === 0) {
+      return `${cardDesc}${cards.length > 1 ? ` 등 ${cards.length}장` : ''}을 ${fromPileName}에서 빈 ${toPileName}로 이동`;
+    } else {
+      const targetCard = board[toPile][board[toPile].length - 1];
+      return `${cardDesc}${cards.length > 1 ? ` 등 ${cards.length}장` : ''}을 ${fromPileName}에서 ${toPileName}의 ${targetCard.rank}${targetCard.suit} 위로 이동`;
+    }
+  };
+
+  // 뒤집을 수 있는 카드 찾기
+  const findFlipHint = () => {
+    for (let pileIndex = 0; pileIndex < gameBoard.length; pileIndex++) {
+      const pile = gameBoard[pileIndex];
+      if (pile.length > 0 && !pile[pile.length - 1].isVisible) {
+        return { pileIndex, cardIndex: pile.length - 1 };
+      }
+    }
+    return null;
+  };
+
+  // 카드 뒤집기 힌트 표시
+  const showFlipHint = (flipHint) => {
+    setShowingHint(true);
+    showHintMessage(`더미 ${flipHint.pileIndex + 1}의 뒤집힌 카드를 클릭해서 뒤집어보세요!`);
+
+    // 해당 카드를 강조 표시 (임시)
+    const tempHintInfo = {
+      from: flipHint.pileIndex,
+      to: -1,
+      cards: [gameBoard[flipHint.pileIndex][flipHint.cardIndex]]
+    };
+    setHintInfo(tempHintInfo);
+
+    setTimeout(() => {
+      setHintInfo(null);
+      setShowingHint(false);
+    }, 3000);
+  };
+
+  // 힌트 메시지 표시 함수
+  const showHintMessage = (message) => {
+    // 기존 힌트 메시지 제거
+    const existingMessage = document.querySelector('.hint-message');
+    if (existingMessage) {
+      existingMessage.remove();
+    }
+
+    // 새 힌트 메시지 생성
+    const hintElement = document.createElement('div');
+    hintElement.className = 'hint-message';
+    hintElement.textContent = message;
+    document.body.appendChild(hintElement);
+
+    // 3초 후 메시지 제거
+    setTimeout(() => {
+      if (document.body.contains(hintElement)) {
+        document.body.removeChild(hintElement);
+      }
+    }, 3000);
+  };
+
+  // 새 게임 시작 시 초기 상태로 복원
+  useEffect(() => {
+    if (gameStarted) {
+      // 초기 상태를 깊은 복사로 저장
+      const deepCopyBoard = gameBoard.map(pile =>
+        pile.map(card => ({ ...card }))
+      );
+      const deepCopyDeal = dealPile.map(card => ({ ...card }));
+
+      setInitialGameBoard(deepCopyBoard);
+      setInitialDealPile(deepCopyDeal);
+    }
+  }, [gameStarted]);
+
   // 게임이 시작되지 않았으면 레벨 선택 화면 표시
   if (!gameStarted) {
     return (
@@ -766,6 +1025,9 @@ function App() {
           <button onClick={undoLastMove} className="undo-btn" disabled={!canUndo}>
             실행취소
           </button>
+          <button onClick={requestHint} className="hint-btn" disabled={showingHint}>
+            힌트 보기
+          </button>
         </div>
       </header>
 
@@ -789,6 +1051,8 @@ function App() {
             onCardClick={handleCardClick}
             draggingCards={draggingCards} // 드래그 중인 카드 정보 전달
             gameBoard={gameBoard} // gameBoard 전달
+            hintInfo={hintInfo}
+            showingHint={showingHint}
           />
         ))}
       </div>
