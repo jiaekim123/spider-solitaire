@@ -1,6 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// 레벨 선택 컴포넌트
+function LevelSelection({ onLevelSelect }) {
+  return (
+    <div className="level-selection">
+      <h2>🕷️ 스파이더 카드게임</h2>
+      <p>원하는 난이도를 선택하세요</p>
+      <div className="level-buttons">
+        <button
+          className="level-button beginner"
+          onClick={() => onLevelSelect('beginner')}
+        >
+          초급
+          <div className="level-description">1가지 무늬 (♠️만)</div>
+        </button>
+        <button
+          className="level-button intermediate"
+          onClick={() => onLevelSelect('intermediate')}
+        >
+          중급
+          <div className="level-description">2가지 무늬 (♠️♥️)</div>
+        </button>
+        <button
+          className="level-button advanced"
+          onClick={() => onLevelSelect('advanced')}
+        >
+          고급
+          <div className="level-description">4가지 무늬 (♠️♥️♦️♣️)</div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 // 카드 컴포넌트 - 드래그 기능 추가
 function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick }) {
   const handleDragStart = (e) => {
@@ -134,19 +167,36 @@ function App() {
   const [dragInfo, setDragInfo] = useState(null);
   const [completedSets, setCompletedSets] = useState(0);
   const [gameWon, setGameWon] = useState(false);
+  const [gameLevel, setGameLevel] = useState(null); // 새로 추가: 게임 레벨 상태
+  const [gameStarted, setGameStarted] = useState(false); // 새로 추가: 게임 시작 여부
 
-  // 게임 초기화
+  // 게임 초기화를 게임 시작될 때만 실행하도록 수정
   useEffect(() => {
-    initializeGame();
+    // 게임이 시작되지 않았으면 초기화하지 않음
   }, []);
 
-  const initializeGame = () => {
-    // 카드 덱 생성 (스파이더는 2덱 사용)
-    const suits = ['♠', '♥', '♦', '♣'];
+  // 레벨별 카드 덱 생성
+  const createDeckByLevel = (level) => {
+    let suits = [];
+
+    switch(level) {
+      case 'beginner':
+        suits = ['♠']; // 1가지 무늬만
+        break;
+      case 'intermediate':
+        suits = ['♠', '♥']; // 2가지 무늬
+        break;
+      case 'advanced':
+        suits = ['♠', '♥', '♦', '♣']; // 4가지 무늬 (원래 게임)
+        break;
+      default:
+        suits = ['♠', '♥', '♦', '♣'];
+    }
+
     const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-    
     let deck = [];
-    // 2덱 생성
+
+    // 2덱 생성 (총 104장)
     for (let i = 0; i < 2; i++) {
       suits.forEach(suit => {
         ranks.forEach(rank => {
@@ -155,6 +205,42 @@ function App() {
       });
     }
     
+    // 초급과 중급의 경우 카드 수를 맞추기 위해 추가 카드 생성
+    if (level === 'beginner') {
+      // 1가지 무늬로 104장을 만들기 위해 8덱 생성
+      deck = [];
+      for (let i = 0; i < 8; i++) {
+        ranks.forEach(rank => {
+          deck.push({ suit: '♠', rank, isVisible: false });
+        });
+      }
+    } else if (level === 'intermediate') {
+      // 2가지 무늬로 104장을 만들기 위해 4덱 생성
+      deck = [];
+      for (let i = 0; i < 4; i++) {
+        ['♠', '♥'].forEach(suit => {
+          ranks.forEach(rank => {
+            deck.push({ suit, rank, isVisible: false });
+          });
+        });
+      }
+    }
+
+    return deck;
+  };
+
+  // 레벨 선택 핸들러
+  const handleLevelSelect = (level) => {
+    setGameLevel(level);
+    setGameStarted(true);
+    initializeGame(level);
+  };
+
+  // 게임 초기화 함수 수정
+  const initializeGame = (level = gameLevel) => {
+    // 레벨별 카드 덱 생성
+    let deck = createDeckByLevel(level);
+
     // 카드 섞기
     deck = shuffleDeck(deck);
     
@@ -353,15 +439,58 @@ function App() {
     checkAndRemoveCompletedSets(newGameBoard);
   };
 
-  // 게임 재시작
+  // 게임 재시작 - 레벨 선택 화면으로 돌아가도록 수정
   const restartGame = () => {
-    initializeGame();
+    setGameStarted(false);
+    setGameLevel(null);
+    setGameBoard([]);
+    setDealPile([]);
+    setScore(500);
+    setCompletedSets(0);
+    setGameWon(false);
+    setDragInfo(null);
   };
+
+  // 레벨 이름 표시 함수
+  const getLevelName = () => {
+    switch(gameLevel) {
+      case 'beginner':
+        return '초급 (1가지 무늬)';
+      case 'intermediate':
+        return '중급 (2가지 무늬)';
+      case 'advanced':
+        return '고급 (4가지 무늬)';
+      default:
+        return '';
+    }
+  };
+
+  // 게임이 시작되지 않았으면 레벨 선택 화면 표시
+  if (!gameStarted) {
+    return (
+      <div className="App">
+        <LevelSelection onLevelSelect={handleLevelSelect} />
+
+        <div className="game-instructions">
+          <h3>게임 방법:</h3>
+          <ul>
+            <li>같은 무늬의 카드를 K부터 A까지 순서대로 배치하면 자동으로 제거됩니다</li>
+            <li>카드는 내림차순으로만 놓을 수 있습니다 (예: 7 위에 6)</li>
+            <li>같은 무늬의 연속된 카드들만 함께 이동할 수 있습니다</li>
+            <li>빈 더미에는 어떤 카드든 놓을 수 있습니다</li>
+            <li>뒤집힌 카드를 클릭하면 앞면으로 뒤집힙니다</li>
+            <li>8개의 세트를 모두 완성하면 승리합니다!</li>
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="App">
       <header className="game-header">
         <h1>스파이더 카드게임</h1>
+        <div className="level-display">{getLevelName()}</div>
         <div className="game-info">
           <div>점수: {score}</div>
           <div>완성된 세트: {completedSets}/8</div>
@@ -371,13 +500,13 @@ function App() {
           <button onClick={dealNewCards} disabled={dealPile.length === 0}>
             새 카드 배치 ({Math.ceil(dealPile.length / 8)}회 남음)
           </button>
-          <button onClick={restartGame}>게임 재시작</button>
+          <button onClick={restartGame} className="level-back-btn">레벨 선택으로</button>
         </div>
       </header>
 
       {gameWon && (
         <div className="victory-message">
-          🎉 축하합니다! 게임을 클리어했습니다! 🎉
+          🎉 축하합니다! {getLevelName()} 게임을 클리어했습니다! 🎉
           <br />
           최종 점수: {score}
         </div>
@@ -395,18 +524,6 @@ function App() {
             onCardClick={handleCardClick}
           />
         ))}
-      </div>
-
-      <div className="game-instructions">
-        <h3>게임 방법:</h3>
-        <ul>
-          <li>같은 무늬의 카드를 K부터 A까지 순서대로 배치하면 자동으로 제거됩니다</li>
-          <li>카드는 내림차순으로만 놓을 수 있습니다 (예: 7 위에 6)</li>
-          <li>같은 무늬의 연속된 카드들만 함께 이동할 수 있습니다</li>
-          <li>빈 더미에는 어떤 카드든 놓을 수 있습니다</li>
-          <li>뒤집힌 카드를 클릭하면 앞면으로 뒤집힙니다</li>
-          <li>8개의 세트를 모두 완성하면 승리합니다!</li>
-        </ul>
       </div>
     </div>
   );
