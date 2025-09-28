@@ -35,11 +35,17 @@ function LevelSelection({ onLevelSelect }) {
 }
 
 // 카드 컴포넌트 - 드래그 기능 추가
-function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging }) {
+function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging, gameBoard }) {
   const handleDragStart = (e) => {
     if (isDraggable) {
       onDragStart(pileIndex, cardIndex);
       e.dataTransfer.effectAllowed = 'move';
+
+      // 커스텀 드래그 이미지 생성 (함께 이동하는 모든 카드들을 보여주기 위해)
+      const draggedCards = gameBoard[pileIndex].slice(cardIndex);
+      if (draggedCards.length > 1) {
+        createCustomDragImage(e, draggedCards);
+      }
     }
   };
 
@@ -57,6 +63,82 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
   const getCardColor = () => {
     if (!card.isVisible) return '';
     return (card.suit === '♥' || card.suit === '♦') ? 'red-suit' : 'black-suit';
+  };
+
+  // 커스텀 드래그 이미지 생성 함수
+  const createCustomDragImage = (e, cards) => {
+    const dragContainer = document.createElement('div');
+    dragContainer.style.position = 'absolute';
+    dragContainer.style.top = '-9999px';
+    dragContainer.style.left = '-9999px';
+    dragContainer.style.width = '80px';
+    dragContainer.style.height = `${100 + (cards.length - 1) * 15}px`;
+    dragContainer.style.pointerEvents = 'none';
+
+    cards.forEach((dragCard, index) => {
+      const cardElement = document.createElement('div');
+      cardElement.style.position = 'absolute';
+      cardElement.style.top = `${index * 15}px`;
+      cardElement.style.left = '0px';
+      cardElement.style.width = '80px';
+      cardElement.style.height = '100px';
+      cardElement.style.borderRadius = '8px';
+      cardElement.style.border = '1px solid #333';
+      cardElement.style.display = 'flex';
+      cardElement.style.alignItems = 'center';
+      cardElement.style.justifyContent = 'center';
+      cardElement.style.fontSize = '14px';
+      cardElement.style.fontWeight = 'bold';
+      cardElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.3)';
+      cardElement.style.zIndex = index.toString();
+
+      if (dragCard.isVisible) {
+        cardElement.style.background = 'linear-gradient(135deg, #ffffff, #f8f8f8)';
+        cardElement.style.color = (dragCard.suit === '♥' || dragCard.suit === '♦') ? '#d32f2f' : '#000';
+        cardElement.textContent = `${dragCard.rank}${dragCard.suit}`;
+
+        // 작은 숫자와 무늬도 추가
+        const topLeft = document.createElement('div');
+        topLeft.style.position = 'absolute';
+        topLeft.style.top = '2px';
+        topLeft.style.left = '3px';
+        topLeft.style.fontSize = '10px';
+        topLeft.style.fontWeight = 'bold';
+        topLeft.style.color = 'inherit';
+        topLeft.textContent = `${dragCard.rank} ${dragCard.suit}`;
+        cardElement.appendChild(topLeft);
+
+        const bottomRight = document.createElement('div');
+        bottomRight.style.position = 'absolute';
+        bottomRight.style.bottom = '2px';
+        bottomRight.style.right = '3px';
+        bottomRight.style.fontSize = '10px';
+        bottomRight.style.fontWeight = 'bold';
+        bottomRight.style.color = 'inherit';
+        bottomRight.style.transform = 'rotate(180deg)';
+        bottomRight.textContent = `${dragCard.rank} ${dragCard.suit}`;
+        cardElement.appendChild(bottomRight);
+      } else {
+        cardElement.style.background = 'linear-gradient(135deg, #1e3a8a, #1e40af)';
+        cardElement.style.color = '#fff';
+        cardElement.style.fontSize = '20px';
+        cardElement.textContent = '🂠';
+      }
+
+      dragContainer.appendChild(cardElement);
+    });
+
+    document.body.appendChild(dragContainer);
+
+    // 드래그 이미지 설정
+    e.dataTransfer.setDragImage(dragContainer, 40, 50);
+
+    // 드래그가 끝나면 임시 요소 제거
+    setTimeout(() => {
+      if (document.body.contains(dragContainer)) {
+        document.body.removeChild(dragContainer);
+      }
+    }, 0);
   };
 
   return (
@@ -81,7 +163,7 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
 }
 
 // 카드 더미 컴포넌트
-function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick, draggingCards }) {
+function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick, draggingCards, gameBoard }) {
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDragOver = (e) => {
@@ -157,6 +239,7 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
           onCardClick={onCardClick}
           isDraggable={draggableIndices.includes(index)}
           isDragging={isDraggingCard(index)}
+          gameBoard={gameBoard} // gameBoard 전달
         />
       ))}
     </div>
@@ -577,6 +660,7 @@ function App() {
             onDrop={handleDrop}
             onCardClick={handleCardClick}
             draggingCards={draggingCards} // 드래그 중인 카드 정보 전달
+            gameBoard={gameBoard} // gameBoard 전달
           />
         ))}
       </div>
