@@ -105,7 +105,12 @@
   transition: all 0.2s ease;
   background: rgba(255,255,255,0.05);
   overflow: visible;
-  padding-bottom: 50px; /* 카드가 아래로 나갈 수 있도록 여유 공간 */
+  padding-bottom: 50px;
+  /* 카드들을 중앙 정렬하기 위한 설정 */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .card-pile.drag-over {
@@ -232,6 +237,30 @@
 .card.black-suit::before,
 .card.black-suit::after {
   color: #000;
+}
+
+/* 옮길 수 없는 카드 스타일 */
+.card.non-movable {
+  opacity: 0.6;
+  filter: grayscale(70%);
+  cursor: default !important;
+}
+
+.card.non-movable.visible {
+  background: linear-gradient(135deg, #e0e0e0, #d0d0d0) !important;
+  color: #666 !important;
+  border-color: #999 !important;
+}
+
+.card.non-movable::before,
+.card.non-movable::after {
+  color: #666 !important;
+}
+
+.card.non-movable:hover {
+  transform: none !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
+  z-index: auto !important;
 }
 
 /* 레벨 선택 화면 스타일 */

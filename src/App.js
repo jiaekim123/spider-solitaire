@@ -35,7 +35,7 @@ function LevelSelection({ onLevelSelect }) {
 }
 
 // 카드 컴포넌트 - 드래그 기능 추가
-function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging, gameBoard }) {
+function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging, gameBoard, isNonMovable }) {
   const handleDragStart = (e) => {
     if (isDraggable) {
       onDragStart(pileIndex, cardIndex);
@@ -143,7 +143,7 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
 
   return (
     <div 
-      className={`card ${card.isVisible ? 'visible' : 'hidden'} ${isDraggable ? 'draggable' : ''} ${getCardColor()} ${isDragging ? 'dragging-preview' : ''}`}
+      className={`card ${card.isVisible ? 'visible' : 'hidden'} ${isDraggable ? 'draggable' : ''} ${getCardColor()} ${isDragging ? 'dragging-preview' : ''} ${isNonMovable ? 'non-movable' : ''}`}
       draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
@@ -153,8 +153,9 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
       style={{
         position: 'absolute',
         top: `${cardIndex * 15}px`,
-        zIndex: isDragging ? cardIndex + 1000 : cardIndex, // 드래그 중인 카드들의 z-index를 높임
-        left: '10px'
+        zIndex: isDragging ? cardIndex + 1000 : cardIndex,
+        left: '50%', // 카드 더미 중앙에 위치
+        transform: 'translateX(-50%)' // 카드 자체를 중앙 정렬
       }}
     >
       {card.isVisible ? `${card.rank}${card.suit}` : '🂠'}
@@ -168,15 +169,46 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
 
   const handleDragOver = (e) => {
     e.preventDefault();
+    e.stopPropagation(); // 이벤트 버블링 방지
     setIsDragOver(true);
   };
 
-  const handleDragLeave = () => {
-    setIsDragOver(false);
+  const handleDragLeave = (e) => {
+    e.stopPropagation(); // 이벤트 버블링 방지
+
+    // 현재 요소에서 완전히 벗어났는지 확인
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    // 카드 더미 영역에서 여유 공간(margin)을 둬서 민감도 조정
+    const margin = 10; // 20px에서 10px로 줄여서 더 정확하게 감지
+
+    if (x < rect.left - margin ||
+        x > rect.right + margin ||
+        y < rect.top - margin ||
+        y > rect.bottom + margin) {
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation(); // 이벤트 버블링 방지
+
+    // 실제로 이 요소 위에 있는지 확인
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+
+    if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+      setIsDragOver(true);
+    }
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
+    e.stopPropagation(); // 이벤트 버블링 방지
     setIsDragOver(false);
     onDrop(pileIndex);
   };
@@ -207,7 +239,22 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
     return draggableIndices;
   };
 
+  // 옮길 수 없는 카드들 찾기 (드래그 가능한 카드를 제외한 보이는 카드들)
+  const getNonMovableCards = () => {
+    const draggableIndices = getDraggableCards();
+    const nonMovableIndices = [];
+
+    for (let i = 0; i < cards.length; i++) {
+      if (cards[i].isVisible && !draggableIndices.includes(i)) {
+        nonMovableIndices.push(i);
+      }
+    }
+
+    return nonMovableIndices;
+  };
+
   const draggableIndices = getDraggableCards();
+  const nonMovableIndices = getNonMovableCards();
 
   // 드래그 중인 카드인지 확인하는 함수
   const isDraggingCard = (cardIndex) => {
@@ -221,9 +268,16 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
     <div 
       className={`card-pile ${isDragOver ? 'drag-over' : ''}`}
       onDragOver={handleDragOver}
+      onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      style={{ minHeight: '120px', position: 'relative' }}
+      style={{
+        minHeight: '120px',
+        position: 'relative',
+        // 드래그 감지 영역 조정 - 패딩/마진을 줄여서 정확도 향상
+        padding: '5px',
+        margin: '-5px',
+      }}
     >
       {cards.length === 0 && (
         <div className="empty-pile">빈 공간</div>
@@ -239,7 +293,8 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
           onCardClick={onCardClick}
           isDraggable={draggableIndices.includes(index)}
           isDragging={isDraggingCard(index)}
-          gameBoard={gameBoard} // gameBoard 전달
+          isNonMovable={nonMovableIndices.includes(index)}
+          gameBoard={gameBoard}
         />
       ))}
     </div>
@@ -306,6 +361,10 @@ function App() {
     setScore(lastState.score);
     setCompletedSets(lastState.completedSets);
     setGameWon(lastState.gameWon);
+
+    // 드래그 관련 상태 초기화 (카드 흐림 현상 방지)
+    setDragInfo(null);
+    setDraggingCards(null);
 
     // 히스토리에서 마지막 상태 제거
     setGameHistory(prev => {
@@ -598,6 +657,10 @@ function App() {
 
     // 새 카드 배치 전에 현재 상태를 히스토리에 저장
     saveGameState();
+
+    // 드래그 관련 상태 완전 초기화 (투명 카드 버그 방지)
+    setDragInfo(null);
+    setDraggingCards(null);
 
     const newGameBoard = [...gameBoard];
     const newDealPile = [...dealPile];
