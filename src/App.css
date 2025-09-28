@@ -1,0 +1,229 @@
+.App {
+  text-align: center;
+  padding: 20px;
+  user-select: none;
+  background: linear-gradient(135deg, #2c5530, #1a4d37);
+  min-height: 100vh;
+  color: white;
+  font-family: 'Arial', sans-serif;
+}
+
+.game-header {
+  margin-bottom: 20px;
+  background: rgba(0,0,0,0.2);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.game-header h1 {
+  margin: 0 0 15px 0;
+  font-size: 2.5em;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.game-info {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin: 15px 0;
+  font-size: 1.1em;
+  font-weight: bold;
+}
+
+.game-controls {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.game-controls button {
+  padding: 10px 20px;
+  font-size: 1em;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: bold;
+}
+
+.game-controls button:first-child {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+}
+
+.game-controls button:last-child {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+  color: white;
+}
+
+.game-controls button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.game-controls button:disabled {
+  background: #666;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.victory-message {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  color: #333;
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 10px;
+  font-size: 1.5em;
+  font-weight: bold;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.game-board {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 20px 0;
+  padding: 20px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 10px;
+}
+
+.card-pile {
+  min-height: 400px;
+  width: 100px;
+  border: 2px dashed #666;
+  position: relative;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  background: rgba(255,255,255,0.05);
+}
+
+.card-pile.drag-over {
+  border-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.2);
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+}
+
+.empty-pile {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #888;
+  font-size: 0.8em;
+  pointer-events: none;
+}
+
+.card {
+  width: 80px;
+  height: 100px;
+  border: 1px solid #333;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  cursor: pointer;
+}
+
+.card.visible {
+  background: linear-gradient(135deg, #ffffff, #f8f8f8);
+  color: #333;
+  border-color: #ccc;
+}
+
+.card.hidden {
+  background: linear-gradient(135deg, #1e3a8a, #1e40af);
+  color: #fff;
+  font-size: 24px;
+}
+
+.card.draggable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.card.visible.draggable {
+  cursor: grab;
+}
+
+.card.visible.draggable:active {
+  cursor: grabbing;
+}
+
+/* 카드 무늬별 색상 */
+.card.red-suit {
+  color: #d32f2f;
+}
+
+.card.black-suit {
+  color: #000;
+}
+
+.game-instructions {
+  max-width: 800px;
+  margin: 30px auto;
+  text-align: left;
+  background: rgba(0,0,0,0.2);
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.game-instructions h3 {
+  margin-top: 0;
+  color: #FFD700;
+  text-align: center;
+}
+
+.game-instructions ul {
+  line-height: 1.6;
+}
+
+.game-instructions li {
+  margin-bottom: 8px;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .game-board {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .card-pile {
+    width: 80px;
+    min-height: 300px;
+  }
+
+  .card {
+    width: 60px;
+    height: 80px;
+    font-size: 10px;
+  }
+
+  .game-info {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .game-controls {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .game-controls button {
+    width: 200px;
+  }
+}
