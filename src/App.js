@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
+import { useUser } from './UserContext';
+import { updateGameStats, calculateLevel, calculateLevelProgress, xpToNextLevel } from './firebase';
 
 // localStorage 키 상수
 const SAVE_KEY = 'spider-solitaire-save';
@@ -37,6 +39,55 @@ const clearSavedGame = () => {
     console.error('저장된 게임 삭제 실패:', e);
   }
 };
+
+// 사용자 프로필 컴포넌트
+function UserProfile({ user, userData, onLogin, onLogout, loading }) {
+  if (loading) {
+    return (
+      <div className="user-profile loading">
+        <span>로딩 중...</span>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="user-profile">
+        <button className="login-btn" onClick={onLogin}>
+          <img src="https://www.google.com/favicon.ico" alt="Google" className="google-icon" />
+          Google 로그인
+        </button>
+      </div>
+    );
+  }
+
+  const level = userData ? calculateLevel(userData.xp || 0) : 1;
+  const progress = userData ? calculateLevelProgress(userData.xp || 0) : 0;
+  const xpNeeded = userData ? xpToNextLevel(userData.xp || 0) : 1000;
+
+  return (
+    <div className="user-profile logged-in">
+      <div className="user-info">
+        <img src={user.photoURL || '/default-avatar.png'} alt="프로필" className="user-avatar" />
+        <div className="user-details">
+          <span className="user-name">{user.displayName}</span>
+          <div className="user-level">
+            <span className="level-badge">Lv.{level}</span>
+            <div className="xp-bar">
+              <div className="xp-progress" style={{ width: `${progress}%` }}></div>
+            </div>
+            <span className="xp-text">{xpNeeded} XP 남음</span>
+          </div>
+        </div>
+      </div>
+      <div className="user-stats">
+        <span>XP: {userData?.xp || 0}</span>
+        <span>승리: {userData?.gamesWon || 0}</span>
+      </div>
+      <button className="logout-btn" onClick={onLogout}>로그아웃</button>
+    </div>
+  );
+}
 
 // 레벨 선택 컴포넌트
 function LevelSelection({ onLevelSelect, onContinueGame, savedGame }) {
@@ -429,6 +480,9 @@ function getRankValue(rank) {
 
 // 메인 게임 컴포넌트
 function App() {
+  // 사용자 인증 상태
+  const { user, userData, loading: userLoading, login, logout, refreshUserData, isLoggedIn } = useUser();
+
   const [gameBoard, setGameBoard] = useState([]);
   const [dealPile, setDealPile] = useState([]);
   const [score, setScore] = useState(500);
@@ -459,6 +513,10 @@ function App() {
   const [animatingCard, setAnimatingCard] = useState(null);
   // 저장된 게임 상태
   const [savedGame, setSavedGame] = useState(() => loadSavedGame());
+  // 획득 XP 표시 상태
+  const [earnedXP, setEarnedXP] = useState(null);
+  // XP 처리 완료 여부
+  const [xpAwarded, setXpAwarded] = useState(false);
 
   // 자동 저장 useEffect - 게임 상태가 변경될 때마다 저장
   useEffect(() => {
@@ -663,13 +721,42 @@ function App() {
     // 자동 완성 조건이 충족되면 알림
   }, [canAutoComplete]);
 
-  // 게임 승리 시 저장 데이터 삭제
+  // 게임 승리 시 저장 데이터 삭제 및 XP 부여
   useEffect(() => {
-    if (gameWon) {
-      clearSavedGame();
-      setSavedGame(null);
-    }
-  }, [gameWon]);
+    const awardXP = async () => {
+      if (gameWon && !xpAwarded) {
+        clearSavedGame();
+        setSavedGame(null);
+
+        // 로그인한 사용자에게 XP 부여
+        if (isLoggedIn && user) {
+          try {
+            const xp = await updateGameStats(
+              user.uid,
+              gameLevel,
+              score,
+              moveCount,
+              completedSets,
+              true // won
+            );
+            setEarnedXP(xp);
+            setXpAwarded(true);
+            // 사용자 데이터 새로고침
+            await refreshUserData();
+
+            // 5초 후 XP 표시 숨기기
+            setTimeout(() => {
+              setEarnedXP(null);
+            }, 5000);
+          } catch (error) {
+            console.error('XP 부여 오류:', error);
+          }
+        }
+      }
+    };
+
+    awardXP();
+  }, [gameWon, xpAwarded, isLoggedIn, user, gameLevel, score, moveCount, completedSets, refreshUserData]);
 
   // 카드 더블클릭/탭 시 자동 이동
   const handleCardDoubleClick = useCallback((pileIndex, cardIndex) => {
@@ -846,6 +933,8 @@ function App() {
     setSavedGame(null);
     setGameLevel(level);
     setGameStarted(true);
+    setXpAwarded(false); // XP 부여 상태 초기화
+    setEarnedXP(null);
     initializeGame(level);
   };
 
@@ -863,6 +952,8 @@ function App() {
     setGameLevel(saved.gameLevel);
     setGameStarted(true);
     setGameWon(false);
+    setXpAwarded(false); // XP 부여 상태 초기화
+    setEarnedXP(null);
 
     // 초기 상태도 복원
     if (saved.initialGameBoard) {
@@ -1551,6 +1642,13 @@ function App() {
   if (!gameStarted) {
     return (
       <div className="App">
+        <UserProfile
+          user={user}
+          userData={userData}
+          onLogin={login}
+          onLogout={logout}
+          loading={userLoading}
+        />
         <LevelSelection
           onLevelSelect={handleLevelSelect}
           onContinueGame={handleContinueGame}
@@ -1566,6 +1664,7 @@ function App() {
             <li>빈 더미에는 어떤 카드든 놓을 수 있습니다</li>
             <li>뒤집힌 카드를 클릭하면 앞면으로 뒤집힙니다</li>
             <li>8개의 세트를 모두 완성하면 승리합니다!</li>
+            {isLoggedIn && <li className="xp-info">게임을 클리어하면 경험치를 획득합니다!</li>}
           </ul>
         </div>
       </div>
@@ -1574,6 +1673,13 @@ function App() {
 
   return (
     <div className="App">
+      <UserProfile
+        user={user}
+        userData={userData}
+        onLogin={login}
+        onLogout={logout}
+        loading={userLoading}
+      />
       <header className="game-header">
         <h1>스파이더 카드게임</h1>
         <div className="level-display">{getLevelName()}</div>
@@ -1610,6 +1716,18 @@ function App() {
           🎉 축하합니다! {getLevelName()} 게임을 클리어했습니다! 🎉
           <br />
           최종 점수: {score}
+          {earnedXP && isLoggedIn && (
+            <>
+              <br />
+              <span className="xp-earned">+{earnedXP} XP 획득!</span>
+            </>
+          )}
+          {!isLoggedIn && (
+            <>
+              <br />
+              <span className="login-prompt">로그인하면 경험치를 획득할 수 있습니다!</span>
+            </>
+          )}
         </div>
       )}
 
