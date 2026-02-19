@@ -8,6 +8,8 @@ html {
   height: 100%;
   height: 100dvh;
   background: #1a4d37; /* 배경색 추가 - 흰색 영역 방지 */
+  /* iOS 사파리 상하단 바 영역 문제 해결 */
+  touch-action: none; 
 }
 
 body {
@@ -26,13 +28,16 @@ body {
   background: #1a4d37; /* 배경색 추가 - 흰색 영역 방지 */
   /* iOS에서 스크롤 시 주소창 숨김 개선 */
   -webkit-overflow-scrolling: touch;
+  /* 전체 화면 드래그 스크롤 방지 */
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 #root {
   height: 100%;
   height: 100dvh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* 스크롤 방지 - 게임 보드 내부에서만 제스처 처리 */
+  overflow: hidden; 
   background: linear-gradient(135deg, #2c5530, #1a4d37);
 }
 

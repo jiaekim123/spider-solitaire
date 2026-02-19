@@ -111,33 +111,60 @@ function Modal({ title, onClose, children }) {
 }
 
 // 카드 컴포넌트
-function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging, isNonMovable, isAnimating }) {
+function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable, onCardClick, isDragging, isNonMovable, isAnimating, onTouchStart, dragPosition }) {
   const handleDragStart = (e) => {
     if (isDraggable) {
       onDragStart(pileIndex, cardIndex);
       e.dataTransfer.effectAllowed = 'move';
     }
   };
+
+  const handleTouchStart = (e) => {
+    if (isDraggable && onTouchStart) {
+      const touch = e.touches[0];
+      onTouchStart(e, pileIndex, cardIndex, { x: touch.clientX, y: touch.clientY });
+    }
+  };
+
   const getCardColor = () => {
     if (!card.isVisible) return '';
     return (card.suit === '♥' || card.suit === '♦') ? 'red-suit' : 'black-suit';
   };
+
+  const getStyle = () => {
+    if (isDragging && dragPosition) {
+      return {
+        position: 'fixed',
+        left: `${dragPosition.x}px`,
+        top: `${dragPosition.y}px`,
+        zIndex: 9999,
+        transform: 'translate(-50%, -50%) scale(1.1)',
+        pointerEvents: 'none',
+        width: '60px', 
+        height: '80px' 
+      };
+    }
+    return {
+      position: 'absolute',
+      // 반응형 오프셋: 모바일에서는 더 촘촘하게 (2.5vh), 데스크탑에서는 3vh+
+      top: `calc(${cardIndex} * clamp(12px, 2.5vh, 25px))`,
+      zIndex: isDragging || isAnimating ? cardIndex + 1000 : cardIndex,
+      left: '50%',
+      transform: 'translateX(-50%)'
+    };
+  };
+
   return (
     <div
       className={`card ${card.isVisible ? 'visible' : 'hidden'} ${isDraggable ? 'draggable' : ''} ${getCardColor()} ${isDragging ? 'dragging-preview' : ''} ${isNonMovable ? 'non-movable' : ''} ${isAnimating ? 'animating' : ''}`}
       draggable={isDraggable}
       onDragStart={handleDragStart}
       onDragEnd={onDragEnd}
+      onTouchStart={handleTouchStart}
       onClick={() => onCardClick(pileIndex, cardIndex)}
       data-rank={card.rank}
       data-suit={card.suit}
-      style={{
-        position: 'absolute',
-        top: `${cardIndex * 18}px`,
-        zIndex: isDragging || isAnimating ? cardIndex + 1000 : cardIndex,
-        left: '50%',
-        transform: 'translateX(-50%)'
-      }}
+      style={getStyle()}
     >
       {card.isVisible ? `${card.rank}${card.suit}` : ''}
     </div>
@@ -145,7 +172,7 @@ function Card({ card, cardIndex, pileIndex, onDragStart, onDragEnd, isDraggable,
 }
 
 // 카드 더미 컴포넌트
-function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick, draggingCards, animatingCard }) {
+function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClick, draggingCards, animatingCard, onTouchStart, dragPosition }) {
   const [isDragOver, setIsDragOver] = useState(false);
   const handleDragOver = (e) => { e.preventDefault(); setIsDragOver(true); };
   const handleDragLeave = () => setIsDragOver(false);
@@ -169,12 +196,16 @@ function CardPile({ cards, pileIndex, onDragStart, onDragEnd, onDrop, onCardClic
 
   return (
     <div 
-      className={`card-pile ${isDragOver ? 'drag-over' : ''}`} onDragOver={handleDragOver} onDragEnter={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+      className={`card-pile ${isDragOver ? 'drag-over' : ''}`} 
+      onDragOver={handleDragOver} onDragEnter={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop}
+      data-pile-index={pileIndex}
     >
       {cards.map((card, index) => (
         <Card
           key={`${pileIndex}-${index}`} card={card} cardIndex={index} pileIndex={pileIndex}
           onDragStart={onDragStart} onDragEnd={onDragEnd} onCardClick={onCardClick}
+          onTouchStart={onTouchStart}
+          dragPosition={isDraggingCard(index) ? dragPosition : null}
           isDraggable={draggableIndices.includes(index)} isDragging={isDraggingCard(index)}
           isNonMovable={card.isVisible && !draggableIndices.includes(index)}
           isAnimating={animatingCard?.from === pileIndex && index >= (animatingCard?.startIndex || 0)}
@@ -205,6 +236,7 @@ function App() {
   const [isAutoCompleting, setIsAutoCompleting] = useState(false);
   const [animatingCard, setAnimatingCard] = useState(null);
   const [savedGame] = useState(() => loadSavedGame());
+  const [dragPosition, setDragPosition] = useState(null); // 터치 드래그 위치
 
   const [showDealModal, setShowDealModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
@@ -214,6 +246,53 @@ function App() {
   const [magicWandCount, setMagicWandCount] = useState(4);
 
   const ghostRef = useRef(null);
+
+  // 터치 드래그 핸들러
+  // const handleTouchStart = (e, pileIndex, cardIndex, pos) => {
+  //   // e.preventDefault()는 여기서 호출하면 클릭이 막힐 수 있음
+  //   setDragInfo({ sourcePile: pileIndex, startIndex: cardIndex, cards: gameBoard[pileIndex].slice(cardIndex) });
+  //   setDraggingCards({ pileIndex: pileIndex, startIndex: cardIndex });
+  //   setDragPosition(pos);
+  // };
+
+  const handleTouchMove = (e) => {
+    if (dragPosition && draggingCards) {
+      // e.preventDefault(); // 스크롤 방지
+      const touch = e.touches[0];
+      setDragPosition({ x: touch.clientX, y: touch.clientY });
+    }
+  };
+
+  const handleTouchEnd = (e) => {
+    if (dragPosition && draggingCards) {
+      const touch = e.changedTouches[0];
+      // 드롭된 위치의 요소 찾기 (pointer-events: none이 dragging card에 적용되어 있어야 함)
+      const element = document.elementFromPoint(touch.clientX, touch.clientY);
+      const pileElement = element?.closest('.card-pile');
+      
+      if (pileElement) {
+        const targetPileIndex = parseInt(pileElement.getAttribute('data-pile-index'), 10);
+        if (!isNaN(targetPileIndex) && targetPileIndex !== draggingCards.pileIndex) {
+          // Drop Logic 복사
+           if (!dragInfo || dragInfo.sourcePile === targetPileIndex) return;
+            const targetPile = gameBoard[targetPileIndex];
+            const topCard = targetPile[targetPile.length - 1];
+            if (targetPile.length === 0 || getRankValue(topCard.rank) === getRankValue(dragInfo.cards[0].rank) + 1) {
+              saveGameState();
+              const nb = gameBoard.map(p1 => [...p1]);
+              nb[dragInfo.sourcePile].splice(dragInfo.startIndex);
+              nb[targetPileIndex].push(...dragInfo.cards);
+              if (nb[dragInfo.sourcePile].length > 0) nb[dragInfo.sourcePile][nb[dragInfo.sourcePile].length - 1].isVisible = true;
+              setGameBoard(nb); setScore(s => Math.max(0, s - 1)); setMoveCount(m => m + 1);
+              checkAndRemoveCompletedSets(nb);
+            }
+        }
+      }
+      setDragInfo(null);
+      setDraggingCards(null);
+      setDragPosition(null);
+    }
+  };
 
   useEffect(() => {
     let interval;
@@ -475,14 +554,18 @@ function App() {
             ))}
           </div>
           <div className="game-stats-header">
-            {settings.showTime && <div className="stat-item">시간: {formatTime(gameTime)}</div>}
+            {settings.showTime && <div className="stat-item">{formatTime(gameTime)}</div>}
             <div className="stat-item">점수: {score}</div>
-            <div className="stat-item">횟수: {moveCount}</div>
+            <div className="stat-item">이동: {moveCount}</div>
           </div>
         </div>
       </header>
       <div className="main-game-container">
-        <div className="game-board" onTouchMove={() => {}} onTouchEnd={() => {}}>
+        <div 
+          className="game-board" 
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
           {gameBoard.map((pile, index) => (
             <CardPile key={index} cards={pile} pileIndex={index}
                       onDragStart={(p, c) => {
@@ -506,7 +589,15 @@ function App() {
                         setDragInfo(null); setDraggingCards(null);
                       }}
                       onCardClick={handleCardClick} draggingCards={draggingCards}
-                      animatingCard={animatingCard} />
+                      animatingCard={animatingCard} 
+                      onTouchStart={(e, p, c, pos) => {
+                        // Touch Start Logic
+                        setDragInfo({ sourcePile: p, startIndex: c, cards: gameBoard[p].slice(c) });
+                        setDraggingCards({ pileIndex: p, startIndex: c });
+                        setDragPosition(pos);
+                     }}
+                     dragPosition={dragPosition}
+            />
           ))}
         </div>
         <aside className="game-sidebar">

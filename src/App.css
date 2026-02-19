@@ -17,25 +17,29 @@
 
 /* 상단 정보 바 */
 .game-header {
-  padding: 15px 20px;
+  padding: 0.5rem 1rem;
   background: rgba(0, 0, 0, 0.4);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  flex-shrink: 0;
+  z-index: 10;
 }
 
 .header-top {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
 }
 
 .foundation-piles {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  flex-wrap: wrap;
+  max-width: 65%;
 }
 
 .foundation-slot {
-  width: 50px;
-  height: 70px;
+  width: 38px;
+  height: 53px; /* Aspect ratio ~ 5/7 */
   background: rgba(0, 0, 0, 0.2);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -47,22 +51,24 @@
 .foundation-slot .card {
   width: 100%;
   height: 100%;
-  font-size: 14px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  font-size: 12px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.5);
   border-radius: 4px;
 }
 
 .game-stats-header {
   display: flex;
-  gap: 30px;
-  font-size: 1.1em;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 0.85em;
   font-weight: bold;
   color: #fff;
-  margin-top: 10px;
 }
 
 .stat-item {
   text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+  white-space: nowrap;
 }
 
 /* 메인 컨테이너 레이아웃 */
@@ -71,31 +77,38 @@
   flex: 1;
   position: relative;
   overflow: hidden;
+  width: 100%;
 }
 
 .game-board {
   flex: 1;
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 20px;
-  padding-right: 100px; /* 사이드바 공간 확보 */
+  justify-content: space-evenly;
+  gap: 2px;
+  padding: 10px 4px;
+  /* 모바일 기본: 하단 바 공간 확보 */
+  padding-bottom: 70px; 
+  padding-right: 4px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-/* 사이드바 스타일 */
+/* 사이드바 스타일 (기본 모바일: 하단 바) */
 .game-sidebar {
   position: absolute;
-  right: 0;
-  top: 0;
   bottom: 0;
-  width: 80px;
-  background: rgba(0, 0, 0, 0.4);
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
-  flex-direction: column;
-  padding: 15px 5px;
-  gap: 15px;
-  border-left: 1px solid rgba(255,255,255,0.1);
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 10px;
+  border-top: 1px solid rgba(255,255,255,0.1);
   z-index: 100;
+  backdrop-filter: blur(5px);
 }
 
 .sidebar-btn {
@@ -106,14 +119,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 5px;
-  transition: all 0.2s;
-  padding: 10px 0;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px;
+  flex: 1;
 }
 
-.sidebar-btn:hover:not(:disabled) {
+.sidebar-btn:active {
   color: white;
-  transform: scale(1.1);
+  transform: scale(0.95);
 }
 
 .sidebar-btn:disabled {
@@ -122,32 +136,35 @@
 }
 
 .btn-icon {
-  font-size: 24px;
+  font-size: 20px;
+  line-height: 1;
 }
 
 .btn-text {
-  font-size: 12px;
+  font-size: 10px;
+  line-height: 1;
 }
 
 .deal-pile-container {
-  margin-top: auto;
-  cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  margin-left: 5px;
 }
 
 .deal-pile-visual {
-  width: 50px;
-  height: 70px;
+  width: 32px;
+  height: 44px;
   background: linear-gradient(135deg, #1e3a8a, #1e40af);
   border: 1.5px solid #fff;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+  font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .deal-pile-visual.empty {
@@ -156,32 +173,36 @@
 }
 
 .deal-count {
-  font-size: 14px;
+  font-size: 10px;
   font-weight: bold;
-  margin-top: 5px;
+  margin-top: 2px;
 }
 
 /* 카드 및 더미 스타일 수정 */
 .card-pile {
-  width: 90px;
-  min-height: 400px;
+  flex: 1;
+  max-width: 12%; /* 8 piles ~ 12.5% */
+  min-height: 100%;
   position: relative;
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  /* background: rgba(0, 0, 0, 0.1); 모바일에서 배경 너무 진하면 복잡해 보임 */
+  border-radius: 4px;
 }
 
 .card {
-  width: 80px;
-  height: 110px;
-  border-radius: 6px;
+  width: 100%;
+  aspect-ratio: 5 / 7;
+  height: auto;
+  border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 24px;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+  /* 반응형 폰트 크기: 뷰포트 너비에 비례하되 최소/최대 제한 */
+  font-size: clamp(10px, 2.5vw, 24px); 
+  transition: transform 0.1s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .card.visible {
@@ -190,25 +211,24 @@
   border: 1px solid #c0b090;
 }
 
-/* 카드 상단 좌측에 작은 숫자와 무늬 표시 */
+/* 카드 인덱스 (작은 숫자) */
 .card.visible::before {
   content: attr(data-rank) ' ' attr(data-suit);
   position: absolute;
-  top: 3px;
-  left: 4px;
-  font-size: 12px;
+  top: 2px;
+  left: 3px;
+  font-size: 0.6em; 
   font-weight: bold;
   line-height: 1;
   color: inherit;
 }
 
-/* 카드 하단 우측에 뒤집힌 숫자와 무늬 표시 */
 .card.visible::after {
   content: attr(data-rank) ' ' attr(data-suit);
   position: absolute;
-  bottom: 3px;
-  right: 4px;
-  font-size: 12px;
+  bottom: 2px;
+  right: 3px;
+  font-size: 0.6em;
   font-weight: bold;
   line-height: 1;
   color: inherit;
@@ -216,202 +236,103 @@
 }
 
 .card.hidden {
-  background: linear-gradient(135deg, #1e3a8a, #1e40af);
-  color: transparent;
-  border: 2px solid #fff;
-  background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.1) 0, rgba(255,255,255,0.1) 10px, transparent 10px, transparent 20px);
-}
-
-.card.red-suit {
-  color: #d32f2f;
-}
-
-.card.black-suit {
-  color: #000;
-}
-
-/* 옮길 수 없는 카드 스타일 (완전 불투명하게 수정하여 겹침 문제 해결) */
-.card.non-movable {
-  opacity: 1 !important; 
-  filter: brightness(0.85); /* 전체적으로 살짝 어둡게 처리 */
-  cursor: default !important;
-}
-
-.card.non-movable.visible {
-  background: linear-gradient(135deg, #dcdcdc, #bcbcbc) !important; /* 불투명한 회색톤으로 변경 */
-  color: #444 !important;
-  border: 1px solid #999 !important;
-}
-
-/* 뒷면 카드 디자인 (이미지의 달/별 패턴 느낌) */
-.card.hidden {
   background: #1e3a8a;
   background-image: 
     radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.2) 0%, transparent 10%),
     radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.1) 0%, transparent 15%),
     linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
-  border: 2px solid #fff;
+  border: 1px solid #fff;
   color: transparent;
-  position: absolute;
 }
 
-.card.draggable:hover {
-  transform: translateX(-50%) translateY(-5px) !important;
-  box-shadow: 0 8px 15px rgba(0,0,0,0.5);
-  z-index: 1000 !important;
+.card.red-suit { color: #d32f2f; }
+.card.black-suit { color: #000; }
+
+.card.non-movable {
+  opacity: 1 !important; 
+  filter: brightness(0.9);
+  cursor: default !important;
 }
 
-/* 힌트 및 애니메이션 */
-.card.hint-source {
-  border: 3px solid #ffeb3b !important;
-  box-shadow: 0 0 15px #ffeb3b !important;
+.card.draggable:active {
+  transform: scale(1.05);
+  z-index: 1000;
 }
 
-.card.hint-target {
-  border: 3px solid #4caf50 !important;
-  box-shadow: 0 0 15px #4caf50 !important;
-}
-
-/* 모달 스타일 */
+/* 모달 스타일 반응형 */
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  backdrop-filter: blur(3px);
 }
 
 .modal-content {
   background: #1a4d37;
-  border: 3px solid #2e7d32;
+  border: 2px solid #2e7d32;
   border-radius: 12px;
-  width: 450px;
-  max-width: 90vw;
+  width: 90%;
+  max-width: 400px;
   box-shadow: 0 0 30px rgba(0,0,0,0.8);
   overflow: hidden;
 }
 
-.modal-header {
-  padding: 15px;
-  background: rgba(0,0,0,0.2);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  position: relative;
+/* 태블릿/데스크탑 (가로 모드 포함) 스타일 재정의 */
+@media (min-width: 768px) {
+  .game-board {
+    padding-right: 90px; /* 우측 사이드바 공간 */
+    padding-bottom: 20px;
+  }
+
+  .game-sidebar {
+    top: 0; bottom: 0; left: auto; right: 0;
+    width: 80px;
+    height: auto;
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 15px 5px;
+    gap: 15px;
+    border-top: none;
+    border-left: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .sidebar-btn {
+    padding: 10px 0;
+  }
+  
+  .btn-icon { font-size: 24px; }
+  .btn-text { font-size: 12px; }
+
+  .deal-pile-container {
+    margin-top: auto;
+    margin-left: 0;
+  }
+  
+  .deal-pile-visual {
+    width: 50px; height: 70px; font-size: 24px;
+  }
+  
+  .foundation-slot {
+    width: 50px; height: 70px;
+  }
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.4em;
-  color: #fff;
-}
-
-.close-btn {
-  position: absolute;
-  right: 15px;
-  background: none;
-  border: none;
-  color: #fff;
-  font-size: 24px;
-  cursor: pointer;
-}
-
-.modal-body {
-  padding: 25px;
-}
-
-/* 설정 스위치 스타일 */
-.settings-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.setting-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 1.1em;
-}
-
-.toggle-btn {
-  width: 80px;
-  height: 35px;
-  border-radius: 20px;
-  border: 1px solid rgba(255,255,255,0.2);
-  cursor: pointer;
-  font-weight: bold;
-  transition: all 0.3s;
-}
-
-.toggle-btn.on {
-  background: #4caf50;
-  color: white;
-  text-align: left;
-  padding-left: 15px;
-}
-
-.toggle-btn.off {
-  background: #fff;
-  color: #333;
-  text-align: right;
-  padding-right: 15px;
-}
-
-.menu-link-btn {
-  background: none;
-  border: none;
-  color: #fff;
-  text-align: left;
-  padding: 10px 0;
-  font-size: 1.1em;
-  cursor: pointer;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-/* 딜 옵션 버튼 */
-.deal-options {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.deal-option-btn {
-  background: linear-gradient(to bottom, #8bc34a, #4caf50);
-  border: 1px solid #2e7d32;
-  border-radius: 8px;
-  padding: 15px;
-  color: white;
-  font-size: 1.2em;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 4px 0 #2e7d32;
-  transition: transform 0.1s;
-}
-
-.deal-option-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #2e7d32;
-}
-
-.deal-option-btn.magic-wand {
-  background: linear-gradient(to bottom, #ffc107, #ffa000);
-  border-color: #f57c00;
-  box-shadow: 0 4px 0 #f57c00;
-}
-
-/* 자동 완성 버튼 강조 효과 */
-.sidebar-btn.auto-complete-active {
-  color: #ffeb3b;
-  animation: autoCompleteGlow 1.5s infinite alternate;
-}
-
-@keyframes autoCompleteGlow {
-  from { text-shadow: 0 0 5px rgba(255, 235, 59, 0.5); }
-  to { text-shadow: 0 0 15px rgba(255, 235, 59, 1); transform: scale(1.05); }
+/* 갤럭시 S25 등 최신폰 가로모드 대응 */
+@media (orientation: landscape) and (max-height: 500px) {
+  .game-header {
+    padding: 2px 10px;
+  }
+  .foundation-slot {
+    height: 40px; width: 30px;
+  }
+  .game-sidebar {
+    width: 60px;
+    padding: 5px;
+  }
+  .btn-icon { font-size: 18px; }
+  .btn-text { display: none; } /* 공간 부족 시 텍스트 숨김 */
 }
